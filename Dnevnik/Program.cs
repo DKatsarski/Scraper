@@ -2,6 +2,7 @@
 using Dnevnik;
 using Dnevnik.Persistence;
 using HtmlAgilityPack;
+using NLog;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -12,6 +13,7 @@ var allDatesFormatted = EachDay(startDate, endDate);
 var listOfAllDates = new Queue<string>(allDatesFormatted);
 var httpClient = new HttpClient();
 var httpDocument = new HtmlDocument();
+Logger log = LogManager.GetCurrentClassLogger();
 
 static IEnumerable<string> EachDay(DateTime from, DateTime thru)
 {
@@ -24,6 +26,7 @@ static IEnumerable<string> EachDay(DateTime from, DateTime thru)
 while (listOfAllDates.Any())
 {
     var date = listOfAllDates.Dequeue();
+    log.Info("The CUrrent date is {0}", date);
     var linksOfTheDay = new Queue<string>(await TakeAllLinksOfDay(date));
     var articleLink = linksOfTheDay.Dequeue();
     var commentsOfCurrentArticle = linksOfTheDay.Where(x => x.Contains(articleLink)).FirstOrDefault();
