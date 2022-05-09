@@ -19,181 +19,185 @@ static IEnumerable<string> EachDay(DateTime from, DateTime thru)
         yield return day.ToString("yyyy/MM/dd");
 }
 
-using (var db = new DnevnikContext())
-{
-    db.Add(new Article
-    {
-        Author = "TestPesho",
-        Title = "This is Peна алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадина алжирски газ независимо от политическото напрежение от последните месеци зарадиsho's tale",
 
-        Content = "pesho was great"
-    });
-    db.SaveChanges();
+
+while (listOfAllDates.Any())
+{
+    var date = listOfAllDates.Dequeue();
+    var linksOfTheDay = new Queue<string>(await TakeAllLinksOfDay(date));
+    var articleLink = linksOfTheDay.Dequeue();
+    var commentsOfCurrentArticle = linksOfTheDay.Where(x => x.Contains(articleLink)).FirstOrDefault();
+
+    Thread.Sleep(2000);
+    await ScrapeArticle(httpClient, httpDocument, articleLink);
+
+    if (commentsOfCurrentArticle != null)
+    {
+        Thread.Sleep(2000);
+        await ScrapeComments(httpClient, httpDocument, commentsOfCurrentArticle);
+    }
+
+
 
 }
 
-//while (listOfAllDates.Any())
-//{
-//    var date = listOfAllDates.Dequeue();
-//    var linksOfTheDay = new Queue<string>(await TakeAllLinksOfDay(date));
-//    var articleLink = linksOfTheDay.Dequeue();
-//    var commentsOfCurrentArticle = linksOfTheDay.Where(x => x.Contains(articleLink)).FirstOrDefault();
+async Task ScrapeComments(HttpClient httpClient, HtmlDocument httpDocument, string commentsOfCurrentArticle)
+{
 
-//    Thread.Sleep(2000);
-//    await ScrapeArticle(httpClient, httpDocument, articleLink);
+}
 
-//    if (commentsOfCurrentArticle != null)
-//    {
-//        Thread.Sleep(2000);
-//        await ScrapeComments(httpClient, httpDocument, commentsOfCurrentArticle);
-//    }
+async Task ScrapeArticle(HttpClient httpClient, HtmlDocument htmlDocument, string link)
+{
+    var sb = new StringBuilder();
+    var html = await httpClient.GetStringAsync(link);
+    htmlDocument.LoadHtml(html);
 
+    var divs =
+    htmlDocument
+    .DocumentNode
+    .Descendants("article")
+    .Where(node => node.GetAttributeValue("class", "")
+    .Equals("general-article-v2 article"))
+    .ToList();
 
-
-//}
-
-//async Task ScrapeComments(HttpClient httpClient, HtmlDocument httpDocument, string commentsOfCurrentArticle)
-//{
-
-//}
-
-//async Task ScrapeArticle(HttpClient httpClient, HtmlDocument htmlDocument, string link)
-//{
-//    var sb = new StringBuilder();
-//    var html = await httpClient.GetStringAsync(link);
-//    htmlDocument.LoadHtml(html);
-
-//    var divs =
-//    htmlDocument
-//    .DocumentNode
-//    .Descendants("article")
-//    .Where(node => node.GetAttributeValue("class", "")
-//    .Equals("general-article-v2 article"))
-//    .ToList();
-
-//    foreach (var div in divs)
-//    {
-//        var title = div
-//            .Descendants("h1")
-//            .FirstOrDefault()?
-//            .InnerText;
+    foreach (var div in divs)
+    {
+        var title = div
+            .Descendants("h1")
+            .FirstOrDefault()?
+            .InnerText;
 
 
 
 
-//        var content = div
-//        .SelectNodes("//div[@class='article-content']");
+        var content = div
+        .SelectNodes("//div[@class='article-content']");
 
-//        foreach (var node in content)
-//        {
-//            sb.AppendLine(String.Format("{0}, {1}, {2}", "2022/04/06", title, node.InnerText));
-//        }
+        var datePublished = div
+            .Descendants("time")
+            .Where(node => node.GetAttributeValue("itemprop", "")
+            .Equals("datePublished"))
+            .FirstOrDefault()?
+            .Attributes["content"].Value;
+            //.InnerText;
 
-//        var filePath = @"C:\Users\\dkats\Desktop\asdff.csv";
+        var dateModified = div
+            .Descendants("meta")
+            .Where(node => node.GetAttributeValue("itemprop", "")
+            .Equals("dateModified"))
+            .FirstOrDefault()?
+            .Attributes["content"].Value;
 
-//        var resultString = Regex.Replace(sb.ToString().Trim(), @"^\s+$[\r\n]*", string.Empty, RegexOptions.Multiline);
-//        await File.AppendAllTextAsync(filePath, resultString, Encoding.UTF8);
+        foreach (var node in content)
+        {
+            sb.AppendLine(String.Format("{0}, {1}, {2}", "2022/04/06", title, node.InnerText));
+        }
 
-//    }
+        var filePath = @"C:\Users\\dkats\Desktop\asdff.csv";
 
-//}
+        var resultString = Regex.Replace(sb.ToString().Trim(), @"^\s+$[\r\n]*", string.Empty, RegexOptions.Multiline);
+        await File.AppendAllTextAsync(filePath, resultString, Encoding.UTF8);
 
-//var articles = await startCrawlerasync();
+    }
 
-///// <summary>
-///// article-content - class
-///// keywords - id
+}
 
-///// </summary>
+var articles = await startCrawlerasync();
 
-//static async Task<List<Article>> startCrawlerasync()
-//{
-//    var url = "https://www.dnevnik.bg/allnews/2022/04/25/";
-//    var httpClient = new HttpClient();
-//    var html = await httpClient.GetStringAsync(url);
-//    var htmlDocument = new HtmlDocument();
-//    htmlDocument.LoadHtml(html);
-//    var articles = new List<Article>();
-//    var list = new HashSet<string>();
+/// <summary>
+/// article-content - class
+/// keywords - id
 
-//    var divs =
-//        htmlDocument
-//        .DocumentNode
-//        .Descendants("div")
-//        .Where(node => node.GetAttributeValue("class", "")
-//        .Equals("grid-container"))
-//        .ToList();
+/// </summary>
 
+static async Task<List<Article>> startCrawlerasync()
+{
+    var url = "https://www.dnevnik.bg/allnews/2022/04/25/";
+    var httpClient = new HttpClient();
+    var html = await httpClient.GetStringAsync(url);
+    var htmlDocument = new HtmlDocument();
+    htmlDocument.LoadHtml(html);
+    var articles = new List<Article>();
+    var list = new HashSet<string>();
 
-//    foreach (HtmlNode div in divs)
-//    {
-//        var article = new Article()
-//        {
-//            Content = div.Descendants("article").FirstOrDefault()?.InnerText
-//        };
-
-//        var a = div.Descendants("a")
-//            .Select(node => node
-//            .GetAttributeValue("href", String.Empty)).ToList();
-
-//        list = div
-//           .Descendants("a")
-//           .Select(node => node
-//           .GetAttributeValue("href", String.Empty))
-//           .Where(x => x.StartsWith("http"))
-//           .ToHashSet();
+    var divs =
+        htmlDocument
+        .DocumentNode
+        .Descendants("div")
+        .Where(node => node.GetAttributeValue("class", "")
+        .Equals("grid-container"))
+        .ToList();
 
 
-//        articles.Add(article);
-//    }
+    foreach (HtmlNode div in divs)
+    {
+        var article = new Article()
+        {
+            Content = div.Descendants("article").FirstOrDefault()?.InnerText
+        };
 
-//    return articles;
-//}
+        var a = div.Descendants("a")
+            .Select(node => node
+            .GetAttributeValue("href", String.Empty)).ToList();
 
-//static async Task<HashSet<string>> TakeAllLinksOfDay(string dataInString)
-//{
-//    var url = "https://www.dnevnik.bg/allnews/" + dataInString;
-//    var httpClient = new HttpClient();
-//    var html = await httpClient.GetStringAsync(url);
-//    var htmlDocument = new HtmlDocument();
-//    htmlDocument.LoadHtml(html);
-//    var listLinks = new HashSet<string>();
-
-//    var divs =
-//        htmlDocument
-//        .DocumentNode
-//        .Descendants("div")
-//        .Where(node => node.GetAttributeValue("class", "")
-//        .Equals("grid-container"))
-//        .ToList();
+        list = div
+           .Descendants("a")
+           .Select(node => node
+           .GetAttributeValue("href", String.Empty))
+           .Where(x => x.StartsWith("http"))
+           .ToHashSet();
 
 
-//    foreach (HtmlNode div in divs)
-//    {
+        articles.Add(article);
+    }
 
-//        var a = div.Descendants("a")
-//            .Select(node => node
-//            .GetAttributeValue("href", String.Empty)).ToList();
+    return articles;
+}
 
-//        listLinks = div
-//           .Descendants("a")
-//           .Select(node => node
-//           .GetAttributeValue("href", String.Empty))
-//           .Where(x => x.StartsWith("http"))
-//           .ToHashSet();
-//    }
+static async Task<HashSet<string>> TakeAllLinksOfDay(string dataInString)
+{
+    var url = "https://www.dnevnik.bg/allnews/" + dataInString;
+    var httpClient = new HttpClient();
+    var html = await httpClient.GetStringAsync(url);
+    var htmlDocument = new HtmlDocument();
+    htmlDocument.LoadHtml(html);
+    var listLinks = new HashSet<string>();
 
-//    return listLinks;
-//}
+    var divs =
+        htmlDocument
+        .DocumentNode
+        .Descendants("div")
+        .Where(node => node.GetAttributeValue("class", "")
+        .Equals("grid-container"))
+        .ToList();
+
+
+    foreach (HtmlNode div in divs)
+    {
+
+        var a = div.Descendants("a")
+            .Select(node => node
+            .GetAttributeValue("href", String.Empty)).ToList();
+
+        listLinks = div
+           .Descendants("a")
+           .Select(node => node
+           .GetAttributeValue("href", String.Empty))
+           .Where(x => x.StartsWith("http"))
+           .ToHashSet();
+    }
+
+    return listLinks;
+}
 
 
 
 
-//static Func<int, HashSet<string>> FilterLinks(Func<int, HashSet<string>> links = null)
-//{
+static Func<int, HashSet<string>> FilterLinks(Func<int, HashSet<string>> links = null)
+{
 
-//    return links;
-//};
+    return links;
+};
 
 
 
