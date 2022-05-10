@@ -15,6 +15,7 @@ var httpClient = new HttpClient();
 var httpDocument = new HtmlDocument();
 Logger log = LogManager.GetCurrentClassLogger();
 
+
 static IEnumerable<string> EachDay(DateTime from, DateTime thru)
 {
     for (var day = from.Date; day.Date <= thru.Date; day = day.AddDays(1))
