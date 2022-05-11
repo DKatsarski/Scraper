@@ -13,7 +13,9 @@ var allDatesFormatted = EachDay(startDate, endDate);
 var listOfAllDates = new Queue<string>(allDatesFormatted);
 var httpClient = new HttpClient();
 var httpDocument = new HtmlDocument();
+var articles = new List<Article>();
 Logger log = LogManager.GetCurrentClassLogger();
+var context = new DnevnikContext();
 
 
 static IEnumerable<string> EachDay(DateTime from, DateTime thru)
@@ -33,7 +35,7 @@ while (listOfAllDates.Any())
     var commentsOfCurrentArticle = linksOfTheDay.Where(x => x.Contains(articleLink)).FirstOrDefault();
 
     Thread.Sleep(2000);
-    await ScrapeArticle(httpClient, httpDocument, articleLink);
+    articles = await ScrapeArticle(httpClient, httpDocument, articleLink);
 
     if (commentsOfCurrentArticle != null)
     {
@@ -50,8 +52,9 @@ async Task ScrapeComments(HttpClient httpClient, HtmlDocument httpDocument, stri
 
 }
 
-async Task ScrapeArticle(HttpClient httpClient, HtmlDocument htmlDocument, string link)
+async Task<List<Article>> ScrapeArticle(HttpClient httpClient, HtmlDocument htmlDocument, string link)
 {
+    var articles = new List<Article>();
     var sb = new StringBuilder();
     var html = await httpClient.GetStringAsync(link);
     htmlDocument.LoadHtml(html);
@@ -97,16 +100,36 @@ async Task ScrapeArticle(HttpClient httpClient, HtmlDocument htmlDocument, strin
             sb.AppendLine(String.Format("{0}, {1}, {2}", "2022/04/06", title, node.InnerText));
         }
 
-        var filePath = @"C:\Users\\dkats\Desktop\asdff.csv";
+        articles.Add(new Article
+        {
+            Title = title,
+            Content = sb.ToString(),
+            DateModified = DateTime.Parse(dateModified),
+            DatePublished = DateTime.Parse(datePublished)
+        });
 
-        var resultString = Regex.Replace(sb.ToString().Trim(), @"^\s+$[\r\n]*", string.Empty, RegexOptions.Multiline);
-        await File.AppendAllTextAsync(filePath, resultString, Encoding.UTF8);
+        await context.AddAsync(new Article
+        {
+            Title = title,
+            Content = sb.ToString(),
+            DateModified = DateTime.Parse(dateModified),
+            DatePublished = DateTime.Parse(datePublished)
+        });
+
+       await context.SaveChangesAsync();
+
+        //var filePath = @"C:\Users\\dkats\Desktop\asdff.csv";
+
+        //var resultString = Regex.Replace(sb.ToString().Trim(), @"^\s+$[\r\n]*", string.Empty, RegexOptions.Multiline);
+        //await File.AppendAllTextAsync(filePath, resultString, Encoding.UTF8);
 
     }
+    return articles;
+
 
 }
 
-var articles = await startCrawlerasync();
+var articlesss = await startCrawlerasync();
 
 /// <summary>
 /// article-content - class
