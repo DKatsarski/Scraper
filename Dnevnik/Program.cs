@@ -33,23 +33,39 @@ while (listOfAllDates.Any())
     var date = listOfAllDates.Pop();
     log.Info("The Current date is {0}", date);
     var linksOfTheDay = new Stack<string>(await TakeAllLinksOfDay(date));
-    var articleLink = linksOfTheDay.Pop();
 
-    //TODO: take the correct link
+    await ScarapeDay(linksOfTheDay);
 
-    var commentsOfCurrentArticle = linksOfTheDay.Where(x => x.Contains(articleLink)).FirstOrDefault();
 
-    Thread.Sleep(2000);
-    articles = await ScrapeArticle(httpClient, httpDocument, articleLink);
+}
 
-    if (commentsOfCurrentArticle != null)
+async Task ScarapeDay(Stack<string> linksOfTheDay)
+{
+
+    while (linksOfTheDay.Any())
     {
-        Thread.Sleep(2000);
-        await ScrapeComments(httpClient, httpDocument, commentsOfCurrentArticle);
+        var link = linksOfTheDay.Pop();
+
+        if (link.Contains("/comments"))
+        {
+            await ScrapeComments(httpClient, httpDocument, link);
+            
+//TODO: Write foreign keys
+        }
+        else
+        {
+            articles = await ScrapeArticle(httpClient, httpDocument, link);
+            foreach (var article in articles)
+            {
+                // add to db
+               var test = await context.AddAsync(article);
+                
+                await context.SaveChangesAsync();
+            }
+
+   
+        }
     }
-
-
-
 }
 
 async Task ScrapeComments(HttpClient httpClient, HtmlDocument httpDocument, string commentsOfCurrentArticle)
@@ -80,7 +96,7 @@ async Task<List<Article>> ScrapeArticle(HttpClient httpClient, HtmlDocument html
             .InnerText.Replace("&quot;", "'");
 
 
-
+        
 
         var content = div
         .SelectNodes("//div[@class='article-content']");
@@ -111,19 +127,10 @@ async Task<List<Article>> ScrapeArticle(HttpClient httpClient, HtmlDocument html
         {
             Title = title,
             Content = resultString.Replace("&quot;", "'"),
+            ArticleLink = link,
             DateModified = DateTime.Parse(dateModified).Date,
             DatePublished = DateTime.Parse(datePublished).Date
         });
-
-        await context.AddAsync(new Article
-        {
-            Title = title,
-            Content = sb.ToString(),
-            DateModified = DateTime.Parse(dateModified).Date,
-            DatePublished = DateTime.Parse(datePublished).Date
-        });
-
-       await context.SaveChangesAsync();
 
         //var filePath = @"C:\Users\\dkats\Desktop\asdff.csv";
 
