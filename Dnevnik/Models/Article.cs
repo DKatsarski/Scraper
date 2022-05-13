@@ -10,6 +10,7 @@ namespace Dnevnik
         public string? Author { get; set; }
         public DateTime? DatePublished { get; set; }
         public DateTime? DateModified { get; set; }
-        public IEnumerable<Comment>? Comments{ get; set; }
+        public int CommentId { get; set; }
+        public ICollection<Comment>? Comments{ get; set; }
     }
 }

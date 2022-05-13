@@ -3,6 +3,7 @@ using Dnevnik;
 using Dnevnik.Persistence;
 using HtmlAgilityPack;
 using NLog;
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -10,13 +11,14 @@ using System.Text.RegularExpressions;
 var startDate = DateTime.Parse("04/22/2022");
 var endDate = DateTime.Now;
 var allDatesFormatted = EachDay(startDate, endDate);
-var listOfAllDates = new Queue<string>(allDatesFormatted);
+var listOfAllDates = new Stack<string>(allDatesFormatted);
 var httpClient = new HttpClient();
 var httpDocument = new HtmlDocument();
 var articles = new List<Article>();
 Logger log = LogManager.GetCurrentClassLogger();
 var context = new DnevnikContext();
-
+const string DateFormat = "dd/MM/yyyy";
+var cultureInfo = CultureInfo.InvariantCulture;
 
 static IEnumerable<string> EachDay(DateTime from, DateTime thru)
 {
@@ -28,10 +30,13 @@ static IEnumerable<string> EachDay(DateTime from, DateTime thru)
 
 while (listOfAllDates.Any())
 {
-    var date = listOfAllDates.Dequeue();
-    log.Info("The CUrrent date is {0}", date);
-    var linksOfTheDay = new Queue<string>(await TakeAllLinksOfDay(date));
-    var articleLink = linksOfTheDay.Dequeue();
+    var date = listOfAllDates.Pop();
+    log.Info("The Current date is {0}", date);
+    var linksOfTheDay = new Stack<string>(await TakeAllLinksOfDay(date));
+    var articleLink = linksOfTheDay.Pop();
+
+    //TODO: take the correct link
+
     var commentsOfCurrentArticle = linksOfTheDay.Where(x => x.Contains(articleLink)).FirstOrDefault();
 
     Thread.Sleep(2000);
@@ -72,7 +77,7 @@ async Task<List<Article>> ScrapeArticle(HttpClient httpClient, HtmlDocument html
         var title = div
             .Descendants("h1")
             .FirstOrDefault()?
-            .InnerText;
+            .InnerText.Replace("&quot;", "'");
 
 
 
@@ -97,23 +102,25 @@ async Task<List<Article>> ScrapeArticle(HttpClient httpClient, HtmlDocument html
 
         foreach (var node in content)
         {
-            sb.AppendLine(String.Format("{0}, {1}, {2}", "2022/04/06", title, node.InnerText));
+            sb.AppendLine(node.InnerText);
         }
+
+        var resultString = Regex.Replace(sb.ToString().Trim(), @"^\s+$[\r\n]*", string.Empty, RegexOptions.Multiline);
 
         articles.Add(new Article
         {
             Title = title,
-            Content = sb.ToString(),
-            DateModified = DateTime.Parse(dateModified),
-            DatePublished = DateTime.Parse(datePublished)
+            Content = resultString.Replace("&quot;", "'"),
+            DateModified = DateTime.Parse(dateModified).Date,
+            DatePublished = DateTime.Parse(datePublished).Date
         });
 
         await context.AddAsync(new Article
         {
             Title = title,
             Content = sb.ToString(),
-            DateModified = DateTime.Parse(dateModified),
-            DatePublished = DateTime.Parse(datePublished)
+            DateModified = DateTime.Parse(dateModified).Date,
+            DatePublished = DateTime.Parse(datePublished).Date
         });
 
        await context.SaveChangesAsync();
