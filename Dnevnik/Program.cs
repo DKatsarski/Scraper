@@ -1,5 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using Dnevnik;
+using Dnevnik.Models;
 using Dnevnik.Persistence;
 using HtmlAgilityPack;
 using NLog;
@@ -15,6 +16,7 @@ var listOfAllDates = new Stack<string>(allDatesFormatted);
 var httpClient = new HttpClient();
 var httpDocument = new HtmlDocument();
 var articles = new List<Article>();
+var comments = new List<Comment>();
 Logger log = LogManager.GetCurrentClassLogger();
 var context = new DnevnikContext();
 const string DateFormat = "dd/MM/yyyy";
@@ -45,12 +47,20 @@ async Task ScarapeDay(Stack<string> linksOfTheDay)
     while (linksOfTheDay.Any())
     {
         var link = linksOfTheDay.Pop();
+        var idForegin = 0;
 
         if (link.Contains("/comments"))
         {
-            await ScrapeComments(httpClient, httpDocument, link);
+           comments = await ScrapeComments(httpClient, httpDocument, link);
+            foreach (var comment in comments)
+            {
+                //TODO: filter by comment, take substring, scraep article first, take ID, and then scrape comments with the ID of articl e
+                var currentComment = await context.AddAsync(comment);
+                await context.SaveChangesAsync();
+                idForegin = currentComment.Entity.Id;
+            }
             
-//TODO: Write foreign keys
+
         }
         else
         {
@@ -58,9 +68,10 @@ async Task ScarapeDay(Stack<string> linksOfTheDay)
             foreach (var article in articles)
             {
                 // add to db
-               var test = await context.AddAsync(article);
+               var currentArticle = await context.AddAsync(article);
                 
-                await context.SaveChangesAsync();
+               await context.SaveChangesAsync();
+                idForegin = currentArticle.Entity.Id;
             }
 
    
@@ -68,9 +79,9 @@ async Task ScarapeDay(Stack<string> linksOfTheDay)
     }
 }
 
-async Task ScrapeComments(HttpClient httpClient, HtmlDocument httpDocument, string commentsOfCurrentArticle)
+async Task<List<Comment>> ScrapeComments(HttpClient httpClient, HtmlDocument httpDocument, string commentsOfCurrentArticle)
 {
-
+    return null;
 }
 
 async Task<List<Article>> ScrapeArticle(HttpClient httpClient, HtmlDocument htmlDocument, string link)
