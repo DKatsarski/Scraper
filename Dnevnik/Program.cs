@@ -34,52 +34,91 @@ while (listOfAllDates.Any())
 {
     var date = listOfAllDates.Pop();
     log.Info("The Current date is {0}", date);
-    var linksOfTheDay = new Stack<string>(await TakeAllLinksOfDay(date));
+    var linksOfTheDay = new List<string>(await TakeAllLinksOfDay(date));
 
     await ScarapeDay(linksOfTheDay);
 
 
 }
 
-async Task ScarapeDay(Stack<string> linksOfTheDay)
+async Task ScarapeDay(List<string> linksOfTheDay)
 {
+    var articleLink = string.Empty;
+    var commentsLink = string.Empty;
 
-    while (linksOfTheDay.Any())
+    foreach (var link in linksOfTheDay)
     {
-        var link = linksOfTheDay.Pop();
         var idForegin = 0;
+
+        var tempStr = string.Empty;
+
+        if (link == articleLink || link == commentsLink)
+        {
+            continue;
+        }
 
         if (link.Contains("/comments"))
         {
-           comments = await ScrapeComments(httpClient, httpDocument, link);
-            foreach (var comment in comments)
-            {
-                //TODO: filter by comment, take substring, scraep article first, take ID, and then scrape comments with the ID of articl e
-                var currentComment = await context.AddAsync(comment);
-                await context.SaveChangesAsync();
-                idForegin = currentComment.Entity.Id;
-            }
-            
+            tempStr = link.Substring(0, link.IndexOf("/comments"));
+             articleLink = listOfAllDates.Where(x => x == tempStr).FirstOrDefault();
+             commentsLink = link;
+            //TODO: scrape acticle and then comments
 
+     
         }
         else
         {
-            articles = await ScrapeArticle(httpClient, httpDocument, link);
-            foreach (var article in articles)
-            {
-                // add to db
-               var currentArticle = await context.AddAsync(article);
+            articleLink = link;
+            commentsLink = linksOfTheDay.Where(x => x == link + "comments").FirstOrDefault();
+            //TODO: scrape acticle and then comments
+
+        }
+
+
+        //if (link.Contains("/comments"))
+        //{
+        //    //var subStr = link.Substring(0, link.IndexOf("/comments"));
+        //    //var articleLink = listOfAllDates.Where(x => x == subStr).FirstOrDefault();
+        //    //var commentsLink = link;
+
+        //    articles = await ScrapeArticle(httpClient, httpDocument, articleLink);
+        //    foreach (var article in articles)
+        //    {
+        //        var currentArticle = await context.AddAsync(article);
+
+        //        await context.SaveChangesAsync();
+        //        idForegin = currentArticle.Entity.Id;
+        //    }
+
+        //    comments = await ScrapeComments(httpClient, httpDocument, commentsLink, idForegin);
+        //    foreach (var comment in comments)
+        //    {
+        //        //TODO: filter by comment, take substring, scraep article first, take ID, and then scrape comments with the ID of articl e
+        //        var currentComment = await context.AddAsync(comment);
+        //        await context.SaveChangesAsync();
+        //        idForegin = currentComment.Entity.Id;
+        //    }
+            
+
+        //}
+        //else
+        //{
+        //    articles = await ScrapeArticle(httpClient, httpDocument, link);
+        //    foreach (var article in articles)
+        //    {
+        //        // add to db
+        //       var currentArticle = await context.AddAsync(article);
                 
-               await context.SaveChangesAsync();
-                idForegin = currentArticle.Entity.Id;
-            }
+        //       await context.SaveChangesAsync();
+        //        idForegin = currentArticle.Entity.Id;
+        //    }
 
    
-        }
+        //}
     }
 }
 
-async Task<List<Comment>> ScrapeComments(HttpClient httpClient, HtmlDocument httpDocument, string commentsOfCurrentArticle)
+async Task<List<Comment>> ScrapeComments(HttpClient httpClient, HtmlDocument httpDocument, string commentsOfCurrentArticle, int foreignKey)
 {
     return null;
 }
