@@ -1,5 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-using Dnevnik;
+﻿using Dnevnik;
 using Dnevnik.Models;
 using Dnevnik.Persistence;
 using HtmlAgilityPack;
@@ -42,7 +41,7 @@ while (listOfAllDates.Any())
 async Task ScarapeDay(List<string> linksOfTheDay)
 {
     var articleLink = string.Empty;
-    var commentsLink = string.Empty;
+    var articleCommentsLink = string.Empty;
 
     foreach (var link in linksOfTheDay)
     {
@@ -50,7 +49,7 @@ async Task ScarapeDay(List<string> linksOfTheDay)
         var tempStr = string.Empty;
 
         // prevent double checking the same links
-        if (link == articleLink || link == commentsLink)
+        if (link == articleLink || link == articleCommentsLink)
         {
             continue;
         }
@@ -59,9 +58,9 @@ async Task ScarapeDay(List<string> linksOfTheDay)
         {
             tempStr = link.Substring(0, link.IndexOf("/comments"));
             articleLink = listOfAllDates.Where(x => x == tempStr).FirstOrDefault();
-            commentsLink = link;
+            articleCommentsLink = link;
 
-            var a  = await ScrapeArticle(httpClient, httpDocument, articleLink);
+            var a = await ScrapeArticle(httpClient, httpDocument, articleLink);
             foreach (var article in articles)
             {
                 var currentArticle = await context.AddAsync(article);
@@ -75,65 +74,86 @@ async Task ScarapeDay(List<string> linksOfTheDay)
         else
         {
             articleLink = link;
-            commentsLink = linksOfTheDay.Where(x => x == link + "comments").FirstOrDefault();
-            //TODO: scrape acticle and then comments
+            articleCommentsLink = linksOfTheDay.Where(x => x == link + "comments").FirstOrDefault();
+            var article = await ScrapeArticle(httpClient, httpDocument, articleLink);
+            var recordedArticle = await context.AddAsync(article);
+            var d = recordedArticle.Entity.Id;
+            await context.SaveChangesAsync();
+            idForegin = recordedArticle.Entity.Id;
 
-            var a = await ScrapeArticle(httpClient, httpDocument, articleLink);
-            foreach (var article in articles)
-            {
-                var currentArticle = await context.AddAsync(article);
-
-                await context.SaveChangesAsync();
-                idForegin = currentArticle.Entity.Id;
-            }
+            var comments = await ScrapeComments(httpClient, httpDocument, articleCommentsLink, idForegin);
         }
-
-
-        //if (link.Contains("/comments"))
-        //{
-        //    //var subStr = link.Substring(0, link.IndexOf("/comments"));
-        //    //var articleLink = listOfAllDates.Where(x => x == subStr).FirstOrDefault();
-        //    //var commentsLink = link;
-
-        //    articles = await ScrapeArticle(httpClient, httpDocument, articleLink);
-        //    foreach (var article in articles)
-        //    {
-        //        var currentArticle = await context.AddAsync(article);
-
-        //        await context.SaveChangesAsync();
-        //        idForegin = currentArticle.Entity.Id;
-        //    }
-
-        //    comments = await ScrapeComments(httpClient, httpDocument, commentsLink, idForegin);
-        //    foreach (var comment in comments)
-        //    {
-        //        //TODO: filter by comment, take substring, scraep article first, take ID, and then scrape comments with the ID of articl e
-        //        var currentComment = await context.AddAsync(comment);
-        //        await context.SaveChangesAsync();
-        //        idForegin = currentComment.Entity.Id;
-        //    }
-
-
-        //}
-        //else
-        //{
-        //    articles = await ScrapeArticle(httpClient, httpDocument, link);
-        //    foreach (var article in articles)
-        //    {
-        //        // add to db
-        //       var currentArticle = await context.AddAsync(article);
-
-        //       await context.SaveChangesAsync();
-        //        idForegin = currentArticle.Entity.Id;
-        //    }
-
-
-        //}
     }
 }
 
-async Task<List<Comment>> ScrapeComments(HttpClient httpClient, HtmlDocument httpDocument, string commentsOfCurrentArticle, int foreignKey)
+async Task<List<Comment>> ScrapeComments(HttpClient httpClient, HtmlDocument htmlDocument, string articleCommentsLink, int foreignKey)
 {
+    //add null validation 
+    var articleComments = new List<Comment>();
+    var sb = new StringBuilder();
+    var html = await httpClient.GetStringAsync(articleCommentsLink);
+    htmlDocument.LoadHtml(html);
+
+    var divConent =
+    htmlDocument
+    .DocumentNode
+    .Descendants("article")
+    .Where(node => node.GetAttributeValue("class", "")
+    .Equals("general-article-v2 article"))
+    .FirstOrDefault();
+
+    var title = divConent
+    .Descendants("h1")
+    .FirstOrDefault()?
+    .InnerText.Replace("&quot;", "'").Trim();
+
+    var commentsWrapper =
+         htmlDocument
+        .DocumentNode
+        .Descendants("div")
+        .Where(node => node.GetAttributeValue("id", "")
+        .Equals("comments-wrapper"))
+        .FirstOrDefault();
+
+    if (commentsWrapper != null)
+    {
+        var allComments = commentsWrapper
+        .SelectNodes("//li[contains(@class,'comment')]");
+
+        foreach (var comment in allComments)
+        {
+            var commentNumber = comment.Descendants("var").FirstOrDefault().InnerText;
+            var authorsAccount = comment.Descendants("h6").FirstOrDefault().InnerText;
+            var authorsInfo = comment.Descendants("a").Select(node => node
+                .GetAttributeValue("href", String.Empty)).FirstOrDefault();
+            var authorsRating = comment.Descendants("strong").FirstOrDefault().InnerText;
+            var dateOfComment = comment
+                .Descendants("time")
+                .FirstOrDefault()?
+                .Attributes["datetime"].Value;
+            var commentTone = comment.Descendants("small").FirstOrDefault().InnerText;
+
+            var commentContnet = comment.Descendants("div").Where(node => node.GetAttributeValue("class", "").Equals("cr")).ToList();
+            foreach (var node in commentContnet)
+            {
+                sb.AppendLine(node.InnerText);
+            }
+            var resultString = Regex.Replace(sb.ToString().Trim(), @"^\s+$[\r\n]*", string.Empty, RegexOptions.Multiline).Replace("&quot;", "'").Replace("&copy; Reuters", "").Trim();
+            sb.Clear();
+
+            // they might be null
+            var negativeReactions = comment.Descendants("span").Where(node => node.GetAttributeValue("class", "").Equals("e-minus")).FirstOrDefault().InnerText;
+            var positiveReactions = comment.Descendants("span").Where(node => node.GetAttributeValue("class", "").Equals("e-plus")).FirstOrDefault().InnerText;
+                
+        }
+    }
+    else
+    {
+        // no comments
+        return articleComments;
+    }
+  
+
     return null;
 }
 
@@ -144,63 +164,55 @@ async Task<Article> ScrapeArticle(HttpClient httpClient, HtmlDocument htmlDocume
     var html = await httpClient.GetStringAsync(link);
     htmlDocument.LoadHtml(html);
 
-    var divs =
+    var divContent =
     htmlDocument
     .DocumentNode
     .Descendants("article")
     .Where(node => node.GetAttributeValue("class", "")
     .Equals("general-article-v2 article"))
-    .ToList();
+    .FirstOrDefault();
 
-  
-        var title = divs[0]
-            .Descendants("h1")
-            .FirstOrDefault()?
-            .InnerText.Replace("&quot;", "'");
+    var title = divContent
+        .Descendants("h1")
+        .FirstOrDefault()?
+        .InnerText.Replace("&quot;", "'").Trim();
 
-        var content = divs[0]
-        .SelectNodes("//div[@class='article-content']");
+    var content = divContent
+    .SelectNodes("//div[@class='article-content']");
 
-        var datePublished = divs[0]
-            .Descendants("time")
-            .Where(node => node.GetAttributeValue("itemprop", "")
-            .Equals("datePublished"))
-            .FirstOrDefault()?
-            .Attributes["content"].Value;
-        //.InnerText;
+    foreach (var node in content)
+    {
+        sb.AppendLine(node.InnerText);
+    }
+    var resultString = Regex.Replace(sb.ToString().Trim(), @"^\s+$[\r\n]*", string.Empty, RegexOptions.Multiline).Replace("&quot;", "'").Replace("&copy; Reuters", "").Trim();
 
-        var dateModified = divs[0]
-            .Descendants("meta")
-            .Where(node => node.GetAttributeValue("itemprop", "")
-            .Equals("dateModified"))
-            .FirstOrDefault()?
-            .Attributes["content"].Value;
+    var datePublished = divContent
+        .Descendants("time")
+        .Where(node => node.GetAttributeValue("itemprop", "")
+        .Equals("datePublished"))
+        .FirstOrDefault()?
+        .Attributes["content"].Value;
 
-        foreach (var node in content)
-        {
-            sb.AppendLine(node.InnerText);
-        }
-
-        var resultString = Regex.Replace(sb.ToString().Trim(), @"^\s+$[\r\n]*", string.Empty, RegexOptions.Multiline);
+    var dateModified = divContent
+        .Descendants("meta")
+        .Where(node => node.GetAttributeValue("itemprop", "")
+        .Equals("dateModified"))
+        .FirstOrDefault()?
+        .Attributes["content"].Value;
 
     article.Title = title;
-    article.Content = resultString.Replace("&quot;", "'");
+    article.Content = resultString;
     article.ArticleLink = link;
     article.DateModified = DateTime.Parse(dateModified).Date;
     article.DatePublished = DateTime.Parse(datePublished).Date;
 
-
-
-
-        //var filePath = @"C:\Users\\dkats\Desktop\asdff.csv";
-
-        //var resultString = Regex.Replace(sb.ToString().Trim(), @"^\s+$[\r\n]*", string.Empty, RegexOptions.Multiline);
-        //await File.AppendAllTextAsync(filePath, resultString, Encoding.UTF8);
-
-    
     return article;
 
+    // Code if we want to record in file
+    //var filePath = @"C:\Users\\dkats\Desktop\asdff.csv";
 
+    //var resultString = Regex.Replace(sb.ToString().Trim(), @"^\s+$[\r\n]*", string.Empty, RegexOptions.Multiline);
+    //await File.AppendAllTextAsync(filePath, resultString, Encoding.UTF8);
 }
 
 var articlesss = await startCrawlerasync();
