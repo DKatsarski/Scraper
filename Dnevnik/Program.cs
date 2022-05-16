@@ -12,11 +12,13 @@ using System.Text.RegularExpressions;
 var startDate = DateTime.Parse("04/22/2022");
 var endDate = DateTime.Now;
 var allDatesFormatted = EachDay(startDate, endDate);
+
 var listOfAllDates = new Stack<string>(allDatesFormatted);
 var httpClient = new HttpClient();
 var httpDocument = new HtmlDocument();
 var articles = new List<Article>();
 var comments = new List<Comment>();
+
 Logger log = LogManager.GetCurrentClassLogger();
 var context = new DnevnikContext();
 const string DateFormat = "dd/MM/yyyy";
@@ -28,17 +30,13 @@ static IEnumerable<string> EachDay(DateTime from, DateTime thru)
         yield return day.ToString("yyyy/MM/dd");
 }
 
-
-
 while (listOfAllDates.Any())
 {
     var date = listOfAllDates.Pop();
-    log.Info("The Current date is {0}", date);
+    log.Info("The date about to be scrapted is {0}", date);
+
     var linksOfTheDay = new List<string>(await TakeAllLinksOfDay(date));
-
     await ScarapeDay(linksOfTheDay);
-
-
 }
 
 async Task ScarapeDay(List<string> linksOfTheDay)
@@ -49,9 +47,9 @@ async Task ScarapeDay(List<string> linksOfTheDay)
     foreach (var link in linksOfTheDay)
     {
         var idForegin = 0;
-
         var tempStr = string.Empty;
 
+        // prevent double checking the same links
         if (link == articleLink || link == commentsLink)
         {
             continue;
@@ -60,11 +58,19 @@ async Task ScarapeDay(List<string> linksOfTheDay)
         if (link.Contains("/comments"))
         {
             tempStr = link.Substring(0, link.IndexOf("/comments"));
-             articleLink = listOfAllDates.Where(x => x == tempStr).FirstOrDefault();
-             commentsLink = link;
-            //TODO: scrape acticle and then comments
+            articleLink = listOfAllDates.Where(x => x == tempStr).FirstOrDefault();
+            commentsLink = link;
 
-     
+            var a  = await ScrapeArticle(httpClient, httpDocument, articleLink);
+            foreach (var article in articles)
+            {
+                var currentArticle = await context.AddAsync(article);
+
+                await context.SaveChangesAsync();
+                idForegin = currentArticle.Entity.Id;
+            }
+
+
         }
         else
         {
@@ -72,6 +78,14 @@ async Task ScarapeDay(List<string> linksOfTheDay)
             commentsLink = linksOfTheDay.Where(x => x == link + "comments").FirstOrDefault();
             //TODO: scrape acticle and then comments
 
+            var a = await ScrapeArticle(httpClient, httpDocument, articleLink);
+            foreach (var article in articles)
+            {
+                var currentArticle = await context.AddAsync(article);
+
+                await context.SaveChangesAsync();
+                idForegin = currentArticle.Entity.Id;
+            }
         }
 
 
@@ -98,7 +112,7 @@ async Task ScarapeDay(List<string> linksOfTheDay)
         //        await context.SaveChangesAsync();
         //        idForegin = currentComment.Entity.Id;
         //    }
-            
+
 
         //}
         //else
@@ -108,12 +122,12 @@ async Task ScarapeDay(List<string> linksOfTheDay)
         //    {
         //        // add to db
         //       var currentArticle = await context.AddAsync(article);
-                
+
         //       await context.SaveChangesAsync();
         //        idForegin = currentArticle.Entity.Id;
         //    }
 
-   
+
         //}
     }
 }
@@ -123,9 +137,9 @@ async Task<List<Comment>> ScrapeComments(HttpClient httpClient, HtmlDocument htt
     return null;
 }
 
-async Task<List<Article>> ScrapeArticle(HttpClient httpClient, HtmlDocument htmlDocument, string link)
+async Task<Article> ScrapeArticle(HttpClient httpClient, HtmlDocument htmlDocument, string link)
 {
-    var articles = new List<Article>();
+    var article = new Article();
     var sb = new StringBuilder();
     var html = await httpClient.GetStringAsync(link);
     htmlDocument.LoadHtml(html);
@@ -138,28 +152,24 @@ async Task<List<Article>> ScrapeArticle(HttpClient httpClient, HtmlDocument html
     .Equals("general-article-v2 article"))
     .ToList();
 
-    foreach (var div in divs)
-    {
-        var title = div
+  
+        var title = divs[0]
             .Descendants("h1")
             .FirstOrDefault()?
             .InnerText.Replace("&quot;", "'");
 
-
-        
-
-        var content = div
+        var content = divs[0]
         .SelectNodes("//div[@class='article-content']");
 
-        var datePublished = div
+        var datePublished = divs[0]
             .Descendants("time")
             .Where(node => node.GetAttributeValue("itemprop", "")
             .Equals("datePublished"))
             .FirstOrDefault()?
             .Attributes["content"].Value;
-            //.InnerText;
+        //.InnerText;
 
-        var dateModified = div
+        var dateModified = divs[0]
             .Descendants("meta")
             .Where(node => node.GetAttributeValue("itemprop", "")
             .Equals("dateModified"))
@@ -173,22 +183,22 @@ async Task<List<Article>> ScrapeArticle(HttpClient httpClient, HtmlDocument html
 
         var resultString = Regex.Replace(sb.ToString().Trim(), @"^\s+$[\r\n]*", string.Empty, RegexOptions.Multiline);
 
-        articles.Add(new Article
-        {
-            Title = title,
-            Content = resultString.Replace("&quot;", "'"),
-            ArticleLink = link,
-            DateModified = DateTime.Parse(dateModified).Date,
-            DatePublished = DateTime.Parse(datePublished).Date
-        });
+    article.Title = title;
+    article.Content = resultString.Replace("&quot;", "'");
+    article.ArticleLink = link;
+    article.DateModified = DateTime.Parse(dateModified).Date;
+    article.DatePublished = DateTime.Parse(datePublished).Date;
+
+
+
 
         //var filePath = @"C:\Users\\dkats\Desktop\asdff.csv";
 
         //var resultString = Regex.Replace(sb.ToString().Trim(), @"^\s+$[\r\n]*", string.Empty, RegexOptions.Multiline);
         //await File.AppendAllTextAsync(filePath, resultString, Encoding.UTF8);
 
-    }
-    return articles;
+    
+    return article;
 
 
 }
@@ -247,6 +257,7 @@ static async Task<List<Article>> startCrawlerasync()
 
 static async Task<HashSet<string>> TakeAllLinksOfDay(string dataInString)
 {
+    // implement log here
     var url = "https://www.dnevnik.bg/allnews/" + dataInString;
     var httpClient = new HttpClient();
     var html = await httpClient.GetStringAsync(url);
