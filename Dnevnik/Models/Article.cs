@@ -11,7 +11,6 @@ namespace Dnevnik
         public string? ArticleLink { get; set; }
         public DateTime? DatePublished { get; set; }
         public DateTime? DateModified { get; set; }
-        public int CommentId { get; set; }
         public ICollection<Comment>? Comments{ get; set; }
     }
 }

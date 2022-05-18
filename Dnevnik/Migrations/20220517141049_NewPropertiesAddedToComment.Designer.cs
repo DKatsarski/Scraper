@@ -4,6 +4,7 @@ using Dnevnik.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Dnevnik.Migrations
 {
     [DbContext(typeof(DnevnikContext))]
-    partial class DnevnikContextModelSnapshot : ModelSnapshot
+    [Migration("20220517141049_NewPropertiesAddedToComment")]
+    partial class NewPropertiesAddedToComment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -35,6 +37,9 @@ namespace Dnevnik.Migrations
 
                     b.Property<string>("Author")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("CommentId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Content")
                         .HasColumnType("nvarchar(max)");
@@ -85,7 +90,7 @@ namespace Dnevnik.Migrations
                     b.Property<string>("Content")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("DatePosted")
+                    b.Property<DateTime>("DatePosted")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("NegativeReactions")

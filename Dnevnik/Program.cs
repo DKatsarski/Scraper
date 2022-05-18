@@ -20,7 +20,6 @@ var comments = new List<Comment>();
 
 Logger log = LogManager.GetCurrentClassLogger();
 var context = new DnevnikContext();
-const string DateFormat = "dd/MM/yyyy";
 var cultureInfo = CultureInfo.InvariantCulture;
 
 static IEnumerable<string> EachDay(DateTime from, DateTime thru)
@@ -31,10 +30,20 @@ static IEnumerable<string> EachDay(DateTime from, DateTime thru)
 
 while (listOfAllDates.Any())
 {
+    Thread.Sleep(2000);
     var date = listOfAllDates.Pop();
     log.Info("The date about to be scrapted is {0}", date);
 
     var linksOfTheDay = new List<string>(await TakeAllLinksOfDay(date));
+    if (linksOfTheDay.Count() == 0)
+    {
+        Console.WriteLine("OMG");
+    }
+
+    if (linksOfTheDay.Any(x => x == null))
+    {
+        Console.WriteLine("there is something fishiy here");
+    }
     await ScarapeDay(linksOfTheDay);
 }
 
@@ -49,7 +58,12 @@ async Task ScarapeDay(List<string> linksOfTheDay)
         var tempStr = string.Empty;
 
         // prevent double checking the same links
-        if (link == articleLink || link == articleCommentsLink)
+        if (link == articleLink || link == articleCommentsLink || string.IsNullOrEmpty(link))
+        {
+            continue;
+        }
+
+        if (link.Contains("kratki_novini"))
         {
             continue;
         }
@@ -60,16 +74,20 @@ async Task ScarapeDay(List<string> linksOfTheDay)
             articleLink = listOfAllDates.Where(x => x == tempStr).FirstOrDefault();
             articleCommentsLink = link;
 
-            var a = await ScrapeArticle(httpClient, httpDocument, articleLink);
-            foreach (var article in articles)
+            var article = await ScrapeArticle(httpClient, httpDocument, articleLink);
+            var recordedArticle = await context.AddAsync(article);
+            var d = recordedArticle.Entity.Id;
+            await context.SaveChangesAsync();
+            idForegin = recordedArticle.Entity.Id;
+
+            var comments = await ScrapeComments(httpClient, httpDocument, articleCommentsLink, idForegin);
+
+            foreach (var comment in comments)
             {
-                var currentArticle = await context.AddAsync(article);
+                var currentComments = await context.AddAsync(comment);
 
                 await context.SaveChangesAsync();
-                idForegin = currentArticle.Entity.Id;
             }
-
-
         }
         else
         {
@@ -82,6 +100,14 @@ async Task ScarapeDay(List<string> linksOfTheDay)
             idForegin = recordedArticle.Entity.Id;
 
             var comments = await ScrapeComments(httpClient, httpDocument, articleCommentsLink, idForegin);
+
+            foreach (var comment in comments)
+            {
+                var currentComments = await context.AddAsync(comment);
+
+                await context.SaveChangesAsync();
+            }
+
         }
     }
 }
@@ -91,8 +117,11 @@ async Task<List<Comment>> ScrapeComments(HttpClient httpClient, HtmlDocument htm
     //add null validation 
     var articleComments = new List<Comment>();
     var sb = new StringBuilder();
-    var html = await httpClient.GetStringAsync(articleCommentsLink);
+    Thread.Sleep(2000);
+
+    var html = await GetHtmlFromLink(articleCommentsLink);
     htmlDocument.LoadHtml(html);
+    var substringOfRating = "Рейтинг: ".Count();
 
     var divConent =
     htmlDocument
@@ -101,6 +130,12 @@ async Task<List<Comment>> ScrapeComments(HttpClient httpClient, HtmlDocument htm
     .Where(node => node.GetAttributeValue("class", "")
     .Equals("general-article-v2 article"))
     .FirstOrDefault();
+
+    if (divConent == null)
+    {
+        articleComments.Add(new Comment { Content = "No Comments" });
+        return articleComments;
+    }
 
     var title = divConent
     .Descendants("h1")
@@ -117,51 +152,140 @@ async Task<List<Comment>> ScrapeComments(HttpClient httpClient, HtmlDocument htm
 
     if (commentsWrapper != null)
     {
+
         var allComments = commentsWrapper
         .SelectNodes("//li[contains(@class,'comment')]");
 
-        foreach (var comment in allComments)
+        if (allComments != null)
         {
-            var commentNumber = comment.Descendants("var").FirstOrDefault().InnerText;
-            var authorsAccount = comment.Descendants("h6").FirstOrDefault().InnerText;
-            var authorsInfo = comment.Descendants("a").Select(node => node
-                .GetAttributeValue("href", String.Empty)).FirstOrDefault();
-            var authorsRating = comment.Descendants("strong").FirstOrDefault().InnerText;
-            var dateOfComment = comment
-                .Descendants("time")
-                .FirstOrDefault()?
-                .Attributes["datetime"].Value;
-            var commentTone = comment.Descendants("small").FirstOrDefault().InnerText;
-
-            var commentContnet = comment.Descendants("div").Where(node => node.GetAttributeValue("class", "").Equals("cr")).ToList();
-            foreach (var node in commentContnet)
+            try
             {
-                sb.AppendLine(node.InnerText);
-            }
-            var resultString = Regex.Replace(sb.ToString().Trim(), @"^\s+$[\r\n]*", string.Empty, RegexOptions.Multiline).Replace("&quot;", "'").Replace("&copy; Reuters", "").Trim();
-            sb.Clear();
+                foreach (var comment in allComments)
+                {
+                    var commentNumber = comment?.Descendants("var").FirstOrDefault()?.InnerText;
+                    var authorsAccount = comment?.Descendants("h6").FirstOrDefault()?.InnerText;
+                    var authorsInfo = comment?.Descendants("a").Select(node => node
+                        .GetAttributeValue("href", String.Empty)).FirstOrDefault();
+                    var rating = comment?.Descendants("strong").FirstOrDefault()?.InnerText;
+                    var authorsRating = 0;
 
-            // they might be null
-            var negativeReactions = comment.Descendants("span").Where(node => node.GetAttributeValue("class", "").Equals("e-minus")).FirstOrDefault().InnerText;
-            var positiveReactions = comment.Descendants("span").Where(node => node.GetAttributeValue("class", "").Equals("e-plus")).FirstOrDefault().InnerText;
-                
+                    if (rating == null)
+                    {
+                        authorsRating = 0;
+                    }
+                    else
+                    {
+                        if (rating.Substring(substringOfRating) == string.Empty)
+                        {
+                            authorsRating = 0;
+
+                        }
+                        else
+                        {
+                            authorsRating = int.Parse(rating.Substring(substringOfRating).Trim());
+                        }
+                    }
+
+                    var dateOfComment = comment?
+                        .Descendants("time")
+                        .FirstOrDefault()?
+                        .Attributes["datetime"].Value;
+
+
+                    var commentTone = comment?.Descendants("small").FirstOrDefault()?.InnerText;
+
+                    var commentContnet = comment?.Descendants("div").Where(node => node.GetAttributeValue("class", "").Equals("cr")).ToList();
+                    foreach (var node in commentContnet)
+                    {
+                        sb.AppendLine(node.InnerText);
+                    }
+                    var allCommentContent = Regex.Replace(sb.ToString().Trim(), @"^\s+$[\r\n]*", string.Empty, RegexOptions.Multiline).Replace("&quot;", "'").Replace("&copy; Reuters", "").Replace("&copy; ", "").Trim();
+                    sb.Clear();
+
+                    // they might be null
+                    var negativeReactions = comment?.Descendants("span").Where(node => node.GetAttributeValue("class", "").Equals("e-minus")).FirstOrDefault()?.InnerText;
+                    var positiveReactions = comment?.Descendants("span").Where(node => node.GetAttributeValue("class", "").Equals("e-plus")).FirstOrDefault()?.InnerText;
+
+                    articleComments.Add(new Comment
+                    {
+                        CommentNumber = commentNumber == null ? 0 : int.Parse(commentNumber),
+                        Author = authorsAccount,
+                        AuthorsInfo = authorsInfo,
+                        AuthorsRating = authorsRating,
+                        CommentLink = articleCommentsLink,
+                        Tone = commentTone,
+                        Content = allCommentContent,
+                        DatePosted = dateOfComment == null ? null : DateTime.Parse(dateOfComment).Date,
+                        ArticleTitle = title,
+                        NegativeReactions = negativeReactions == null ? 0 : int.Parse(negativeReactions),
+                        PositiveReactions = positiveReactions == null ? 0 : int.Parse(positiveReactions),
+                        ArticleId = foreignKey
+                    });
+                }
+
+            }
+            catch (Exception e)
+             {
+
+                throw e;
+            }
         }
+
+        if (articleComments.Count() == 0)
+        {
+            articleComments.Add(new Comment
+            {
+                ArticleId = foreignKey,
+                Content = "No Comments"
+            });
+        }
+        return articleComments;
     }
     else
     {
         // no comments
+
+        if (articleComments.Count() == 0)
+        {
+            articleComments.Add(new Comment
+            {
+                ArticleId = foreignKey,
+                Content = "No Comments"
+            });
+        }
         return articleComments;
     }
-  
+}
 
-    return null;
+async Task<string> GetHtmlFromLink(string link)
+{
+    try
+    {
+        using (var httpClient = new HttpClient())
+        {
+            log.Info("currnet link is {0}", link);
+            if (link == null)
+            {
+                Console.WriteLine("WTF");
+            }
+            return await httpClient.GetStringAsync(link).ConfigureAwait(false);
+        }
+    }
+    catch (Exception ex)
+    {
+
+        throw ex;
+    }
+
 }
 
 async Task<Article> ScrapeArticle(HttpClient httpClient, HtmlDocument htmlDocument, string link)
 {
     var article = new Article();
     var sb = new StringBuilder();
-    var html = await httpClient.GetStringAsync(link);
+    Thread.Sleep(2000);
+
+    var html = await GetHtmlFromLink(link);
     htmlDocument.LoadHtml(html);
 
     var divContent =
@@ -172,10 +296,16 @@ async Task<Article> ScrapeArticle(HttpClient httpClient, HtmlDocument htmlDocume
     .Equals("general-article-v2 article"))
     .FirstOrDefault();
 
+    if (divContent == null)
+    {
+        article.Content = "No Text";
+        return article;
+    }
+
     var title = divContent
-        .Descendants("h1")
-        .FirstOrDefault()?
-        .InnerText.Replace("&quot;", "'").Trim();
+   .Descendants("h1")
+   .FirstOrDefault()?
+   .InnerText.Replace("&quot;", "'").Trim();
 
     var content = divContent
     .SelectNodes("//div[@class='article-content']");
