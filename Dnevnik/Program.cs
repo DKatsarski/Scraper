@@ -8,41 +8,35 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 //get all the dates for a period of time
-var startDate = DateTime.Parse("04/22/2022");
+var startDate = DateTime.Parse("05/19/2022");
 var endDate = DateTime.Now;
 var allDatesFormatted = EachDay(startDate, endDate);
 
 var listOfAllDates = new Stack<string>(allDatesFormatted);
-var httpClient = new HttpClient();
 var httpDocument = new HtmlDocument();
 var articles = new List<Article>();
 var comments = new List<Comment>();
 
 Logger log = LogManager.GetCurrentClassLogger();
 var context = new DnevnikContext();
-var cultureInfo = CultureInfo.InvariantCulture;
-
-static IEnumerable<string> EachDay(DateTime from, DateTime thru)
-{
-    for (var day = from.Date; day.Date <= thru.Date; day = day.AddDays(1))
-        yield return day.ToString("yyyy/MM/dd");
-}
 
 while (listOfAllDates.Any())
 {
+    if (listOfAllDates.Count() == 1)
+    {
+        log.Info("Last day of the input data");
+    }
+
     var date = listOfAllDates.Pop();
     log.Info("The date about to be scrapted is {0}", date);
-
     var linksOfADay = new List<string>(await TakeAllLinksOfDay(date));
+
     if (linksOfADay.Count() == 0)
     {
-        Console.WriteLine("OMG");
+        log.Info("No more link of this day {0}", date);
+        continue;
     }
 
-    if (linksOfADay.Any(x => x == null))
-    {
-        Console.WriteLine("there is something fishiy here");
-    }
     await ScarapeDay(linksOfADay);
 }
 
@@ -71,42 +65,32 @@ async Task ScarapeDay(List<string> linksOfTheDay)
             tempStr = link.Substring(0, link.IndexOf("/comments"));
             articleLink = listOfAllDates.Where(x => x == tempStr).FirstOrDefault();
             articleCommentsLink = link;
-
-            var article = await ScrapeArticle(httpDocument, articleLink);
-            var recordedArticle = await context.AddAsync(article);
-            var d = recordedArticle.Entity.Id;
-            await context.SaveChangesAsync();
-            idForegin = recordedArticle.Entity.Id;
-
-            var comments = await ScrapeComments(httpDocument, articleCommentsLink, idForegin);
-
-            foreach (var comment in comments)
-            {
-                var currentComments = await context.AddAsync(comment);
-
-                await context.SaveChangesAsync();
-            }
+            idForegin = await RecordDataToDb(httpDocument, log, context, articleLink, articleCommentsLink, idForegin);
         }
         else
         {
             articleLink = link;
             articleCommentsLink = linksOfTheDay.Where(x => x == link + "comments").FirstOrDefault();
-            var article = await ScrapeArticle(httpDocument, articleLink);
-            var recordedArticle = await context.AddAsync(article);
-            var d = recordedArticle.Entity.Id;
-            await context.SaveChangesAsync();
-            idForegin = recordedArticle.Entity.Id;
-
-            var comments = await ScrapeComments(httpDocument, articleCommentsLink, idForegin);
-
-            foreach (var comment in comments)
-            {
-                var currentComments = await context.AddAsync(comment);
-
-                await context.SaveChangesAsync();
-            }
-
+            idForegin = await RecordDataToDb(httpDocument, log, context, articleLink, articleCommentsLink, idForegin);
         }
+    }
+
+    async Task<int> RecordDataToDb(HtmlDocument httpDocument, Logger log, DnevnikContext context, string? articleLink, string? articleCommentsLink, int idForegin)
+    {
+        var article = await ScrapeArticle(httpDocument, articleLink);
+        var recordedArticle = await context.AddAsync(article);
+        await context.SaveChangesAsync();
+        idForegin = recordedArticle.Entity.Id;
+
+        var comments = await ScrapeComments(httpDocument, articleCommentsLink, idForegin);
+
+        foreach (var comment in comments)
+        {
+            var currentComments = await context.AddAsync(comment);
+            await context.SaveChangesAsync();
+        }
+
+        return idForegin;
     }
 }
 
@@ -181,7 +165,7 @@ async Task<List<Comment>> ScrapeComments(HtmlDocument htmlDocument, string artic
     //add null validation 
     var articleComments = new List<Comment>();
     var sb = new StringBuilder();
-    Thread.Sleep(1000);
+    Thread.Sleep(500);
 
     var html = await GetHtmlFromLink(articleCommentsLink);
     htmlDocument.LoadHtml(html);
@@ -376,6 +360,12 @@ static async Task<HashSet<string>> TakeAllLinksOfDay(string dataInString)
     }
 
     return listLinks;
+}
+
+static IEnumerable<string> EachDay(DateTime from, DateTime thru)
+{
+    for (var day = from.Date; day.Date <= thru.Date; day = day.AddDays(1))
+        yield return day.ToString("yyyy/MM/dd");
 }
 
 static Func<int, HashSet<string>> FilterLinks(Func<int, HashSet<string>> links = null)
