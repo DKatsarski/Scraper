@@ -12,7 +12,8 @@ using Newtonsoft.Json;
 
 //get all the dates for a period of time
 var startDate = DateTime.Parse("12/31/2021");
-var endDate =  DateTime.Parse("05/11/2021"); // DateTime.Now;2022/05/11
+//var endDate = DateTime.Now;  
+var endDate = DateTime.Parse("05/20/2022");
 var allDatesFormatted = EachDay(startDate, endDate);
 
 var listOfAllDates = new Stack<string>(allDatesFormatted);
@@ -45,7 +46,7 @@ async Task ScrapeAll(Stack<string> listOfAllDates, HtmlDocument htmlDocument)
         catch (Exception ex)
         {
 
-            Thread.Sleep(10000);
+            Thread.Sleep(30000);
             if (ex.Message.Contains("503"))
             {
                 log.Error("503 error occured! in TakeAllLinksOfDay");
@@ -67,7 +68,7 @@ async Task ScrapeAll(Stack<string> listOfAllDates, HtmlDocument htmlDocument)
         }
         catch (Exception ex)
         {
-            Thread.Sleep(10000);
+            Thread.Sleep(30000);
             if (ex.Message.Contains("503"))
             {
                 log.Error("503 error occured!");
@@ -75,7 +76,7 @@ async Task ScrapeAll(Stack<string> listOfAllDates, HtmlDocument htmlDocument)
             }
             log.Error("This Error occured: {0}", ex.Message);
 
-            Thread.Sleep(10000);
+            Thread.Sleep(30000);
             await ScrapeAll(listOfAllDates, htmlDocument);
             throw ex;
         }
@@ -129,8 +130,9 @@ async Task ScarapeDay(List<string> linksOfTheDay)
         foreach (var comment in comments)
         {
             var currentComments = await context.AddAsync(comment);
-            await context.SaveChangesAsync();
         }
+        await context.SaveChangesAsync();
+
 
         return idForegin;
     }
@@ -140,7 +142,7 @@ async Task<Article> ScrapeArticle(HtmlDocument htmlDocument, string link)
 {
     var article = new Article();
     var sb = new StringBuilder();
-    Thread.Sleep(random.Next(24, 300));
+    Thread.Sleep(random.Next(24, 200));
 
     var html = await GetHtmlFromLink(link);
     if (html == null)
@@ -173,6 +175,11 @@ async Task<Article> ScrapeArticle(HtmlDocument htmlDocument, string link)
     var content = divContent
     .SelectNodes("//div[@class='article-content']");
 
+    var articleAuthor = divContent
+        .Descendants("figcaption")
+        .FirstOrDefault()?
+        .GetAttributeValue("title", "");
+
     foreach (var node in content)
     {
         sb.AppendLine(node.InnerText);
@@ -196,6 +203,7 @@ async Task<Article> ScrapeArticle(HtmlDocument htmlDocument, string link)
     article.Title = title;
     article.Content = resultString;
     article.ArticleLink = link;
+    article.Author = string.IsNullOrEmpty(articleAuthor) ? null : articleAuthor;
     article.DateModified = dateModified == null ? null : DateTime.Parse(dateModified).Date;
     article.DatePublished = datePublished == null ? null : DateTime.Parse(datePublished).Date;
 
