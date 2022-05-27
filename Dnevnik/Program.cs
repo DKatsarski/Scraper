@@ -2,18 +2,15 @@
 using Dnevnik.Models;
 using Dnevnik.Persistence;
 using HtmlAgilityPack;
+using Newtonsoft.Json;
 using NLog;
-using System.Globalization;
-using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
 
 //get all the dates for a period of time
 var startDate = DateTime.Parse("12/31/2021");
-//var endDate = DateTime.Now;  
-var endDate = DateTime.Parse("05/20/2022");
+var endDate = DateTime.Now;
+//var endDate = DateTime.Parse("01/11/2022");
 var allDatesFormatted = EachDay(startDate, endDate);
 
 var listOfAllDates = new Stack<string>(allDatesFormatted);
@@ -30,7 +27,7 @@ await ScrapeAll(listOfAllDates, htmlDocument);
 async Task ScrapeAll(Stack<string> listOfAllDates, HtmlDocument htmlDocument)
 {
     while (listOfAllDates.Any())
-    {
+     {
         if (listOfAllDates.Count() == 1)
         {
             log.Info("Last day of the input data");
@@ -74,7 +71,7 @@ async Task ScrapeAll(Stack<string> listOfAllDates, HtmlDocument htmlDocument)
                 log.Error("503 error occured!");
                 await ScrapeAll(listOfAllDates, htmlDocument);
             }
-            log.Error("This Error occured: {0}", ex.Message);
+            log.Error("This SPECIFIC Error occured: {0}", ex.Message);
 
             Thread.Sleep(30000);
             await ScrapeAll(listOfAllDates, htmlDocument);
@@ -133,7 +130,6 @@ async Task ScarapeDay(List<string> linksOfTheDay)
         }
         await context.SaveChangesAsync();
 
-
         return idForegin;
     }
 }
@@ -153,17 +149,35 @@ async Task<Article> ScrapeArticle(HtmlDocument htmlDocument, string link)
 
     htmlDocument.LoadHtml(html);
 
+    //var divContent =
+    //htmlDocument
+    //.DocumentNode
+    //.Descendants("article")
+    //.Where(node => node.GetAttributeValue("class", "")
+    //.Equals("general-article-v2 article"))
+    //.FirstOrDefault();
+
     var divContent =
-    htmlDocument
-    .DocumentNode
-    .Descendants("article")
-    .Where(node => node.GetAttributeValue("class", "")
-    .Equals("general-article-v2 article"))
-    .FirstOrDefault();
+htmlDocument
+.DocumentNode
+.Descendants("div")
+.Where(node => node.GetAttributeValue("class", "")
+.Equals("site-block"))
+.FirstOrDefault();
 
     if (divContent == null)
     {
+        if (link.Contains("/filmi/"))
+        {
+            article.Title = "Film";
+        }
+
+        if (link.Contains("/photos/"));
+        {
+            article.Title = "Photos";
+        }
         article.Content = "No Text";
+        article.ArticleLink = link;
         return article;
     }
 
@@ -174,6 +188,23 @@ async Task<Article> ScrapeArticle(HtmlDocument htmlDocument, string link)
 
     var content = divContent
     .SelectNodes("//div[@class='article-content']");
+
+    if (content == null)
+    {
+        if (link.Contains("/filmi/"))
+        {
+            article.Title = "Film";
+        }
+
+        if (link.Contains("/photos/"))
+        {
+            article.Title = "Photos";
+        }
+
+        article.Content = "No Text";
+        article.ArticleLink = link;
+        return article;
+    }
 
     var articleAuthor = divContent
         .Descendants("figcaption")
@@ -188,10 +219,8 @@ async Task<Article> ScrapeArticle(HtmlDocument htmlDocument, string link)
 
     var datePublished = divContent
         .Descendants("time")
-        .Where(node => node.GetAttributeValue("itemprop", "")
-        .Equals("datePublished"))
         .FirstOrDefault()?
-        .Attributes["content"].Value;
+        .Attributes["datetime"].Value;
 
     var dateModified = divContent
         .Descendants("meta")
@@ -469,6 +498,13 @@ async Task<HashSet<string>> TakeAllLinksOfDay(HtmlDocument htmlDocument, string 
            .Where(x => x.StartsWith("http"))
            .ToHashSet();
     }
+
+    listLinks.RemoveWhere(x =>
+    x.Contains("#event"));
+    
+    //||
+    //x.Contains("/filmi/") ||
+    //x.Contains("/photos/"));
 
     return listLinks;
 }
