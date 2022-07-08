@@ -14,3 +14,4 @@ Dnevnik/obj/Debug/net6.0/Dnevnik.csproj.AssemblyReference.cache
 *.config
 *.cache
 Logs/myLogs.txt
+*.v1

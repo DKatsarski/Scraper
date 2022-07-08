@@ -225,10 +225,44 @@ htmlDocument
         return article;
     }
 
+    //var articleAuthor = divContent
+    //    .Descendants("figcaption")
+    //    .FirstOrDefault()?
+    //    .GetAttributeValue("title", "");
+
+    var authorHash = new HashSet<string>();
+    var authoerSb = new StringBuilder();
+
     var articleAuthor = divContent
-        .Descendants("figcaption")
-        .FirstOrDefault()?
-        .GetAttributeValue("title", "");
+    .Descendants("a")?
+    .Where(node => node.GetAttributeValue("href", "")
+    .Contains("author"));
+
+    if (articleAuthor != null)
+    {
+        foreach (var author in articleAuthor)
+        {
+            if (!string.IsNullOrWhiteSpace(author.InnerText))
+            {
+                authorHash.Add(author.InnerText.Trim());
+            }
+        }
+
+        if (authorHash.Count() > 1)
+        {
+            foreach (var item in authorHash)
+            {
+                authoerSb.AppendLine(item + "; ");
+            }
+        }
+        else
+        {
+            foreach (var item in authorHash)
+            {
+                authoerSb.AppendLine(item);
+            }
+        }
+    }
 
     foreach (var node in content)
     {
@@ -269,7 +303,8 @@ htmlDocument
     article.Title = title;
     article.Content = resultString;
     article.ArticleLink = link;
-    article.Author = string.IsNullOrEmpty(articleAuthor) ? null : articleAuthor;
+    //article.Author = string.IsNullOrEmpty(string.Join("", authorHash)) ? null : string.Join("", authorHash);
+    article.Author = string.IsNullOrEmpty(authoerSb.ToString()) ? null : authoerSb.ToString();
     article.DateModified = dateModified == null ? null : DateTime.Parse(dateModified).Date;
     article.DatePublished = datePublished == null ? null : DateTime.Parse(datePublished).Date;
     article.Views = string.IsNullOrEmpty(views?[views.Length - 1]) ? null : views[views.Length - 1].Trim().Contains(' ') ? null : views[views.Length - 1].Trim();
@@ -282,8 +317,6 @@ htmlDocument
     //var resultString = Regex.Replace(sb.ToString().Trim(), @"^\s+$[\r\n]*", string.Empty, RegexOptions.Multiline);
     //await File.AppendAllTextAsync(filePath, resultString, Encoding.UTF8);
 }
-
-
 
 async Task<List<Comment>> ScrapeComments(HtmlDocument htmlDocument, string articleCommentsLink, int foreignKey)
 {
