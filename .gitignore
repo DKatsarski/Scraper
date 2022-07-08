@@ -1,0 +1,16 @@
+.vs/Dnevnik/FileContentIndex/47b3496a-23a9-450b-836b-b74730184b9e.vsidx
+.vs/Dnevnik/FileContentIndex/read.lock
+Dnevnik/obj/Dnevnik.csproj.nuget.dgspec.json
+Dnevnik/obj/Dnevnik.csproj.nuget.g.props
+Dnevnik/obj/project.assets.json
+Dnevnik/obj/project.nuget.cache
+Dnevnik/obj/Debug/net6.0/Dnevnik.csproj.AssemblyReference.cache
+*.v2
+*.vsidx
+*.suo
+*.dll
+*.exe
+*.pdb
+*.config
+*.cache
+Logs/myLogs.txt

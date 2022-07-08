@@ -8,9 +8,20 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 //get all the dates for a period of time
-var startDate = DateTime.Parse("12/31/2021");
-var endDate = DateTime.Now;
-//var endDate = DateTime.Parse("01/11/2022");
+
+Console.WriteLine("Please provide the start date of the period you want to scrape articles from");
+Console.WriteLine("Format is in MM/DD/YYYY");
+Console.WriteLine("Type here: ");
+var startDateParse = Console.ReadLine();
+var startDate = DateTime.Parse(startDateParse);
+Console.WriteLine("Please provide the end date of the period you want to scrape articles from");
+Console.WriteLine("Format is in MM/DD/YYYY");
+Console.WriteLine("Type here: ");
+var endDateParse = Console.ReadLine();
+var endDate = DateTime.Parse(endDateParse);
+//TODO: Add validations for the formats
+//var endDate = DateTime.Now;
+//var endDate = DateTime.Parse("07/14/2021");
 var allDatesFormatted = EachDay(startDate, endDate);
 
 var listOfAllDates = new Stack<string>(allDatesFormatted);
@@ -22,12 +33,15 @@ var random = new Random();
 Logger log = LogManager.GetCurrentClassLogger();
 var context = new DnevnikContext();
 
+//for faster performance
+context.ChangeTracker.AutoDetectChangesEnabled = false;
+
 await ScrapeAll(listOfAllDates, htmlDocument);
 
 async Task ScrapeAll(Stack<string> listOfAllDates, HtmlDocument htmlDocument)
 {
     while (listOfAllDates.Any())
-     {
+    {
         if (listOfAllDates.Count() == 1)
         {
             log.Info("Last day of the input data");
@@ -39,6 +53,7 @@ async Task ScrapeAll(Stack<string> listOfAllDates, HtmlDocument htmlDocument)
         try
         {
             linksOfADay = new List<string>(await TakeAllLinksOfDay(htmlDocument, date));
+            //linksOfADay.Add("https://www.dnevnik.bg/razvlechenie/2017/05/17/2973119_komiks_na_denia_-_17_mai/");
         }
         catch (Exception ex)
         {
@@ -73,7 +88,7 @@ async Task ScrapeAll(Stack<string> listOfAllDates, HtmlDocument htmlDocument)
             }
             log.Error("This SPECIFIC Error occured: {0}", ex.Message);
 
-            Thread.Sleep(30000);
+            //Thread.Sleep(30000);
             await ScrapeAll(listOfAllDates, htmlDocument);
             throw ex;
         }
@@ -102,6 +117,10 @@ async Task ScarapeDay(List<string> linksOfTheDay)
 
         if (link.Contains("/comments"))
         {
+            if (link.IndexOf("comments") == 0)
+            {
+
+            }
             tempStr = link.Substring(0, link.IndexOf("comments"));
             articleLink = linksOfTheDay.Where(x => x == tempStr).FirstOrDefault();
             articleCommentsLink = link;
@@ -138,7 +157,7 @@ async Task<Article> ScrapeArticle(HtmlDocument htmlDocument, string link)
 {
     var article = new Article();
     var sb = new StringBuilder();
-    Thread.Sleep(random.Next(24, 200));
+    Thread.Sleep(random.Next(2, 25));
 
     var html = await GetHtmlFromLink(link);
     if (html == null)
@@ -172,7 +191,7 @@ htmlDocument
             article.Title = "Film";
         }
 
-        if (link.Contains("/photos/"));
+        if (link.Contains("/photos/")) ;
         {
             article.Title = "Photos";
         }
@@ -229,12 +248,32 @@ htmlDocument
         .FirstOrDefault()?
         .Attributes["content"].Value;
 
+    var views = divContent?
+    .Descendants("div").Where(node => node.GetAttributeValue("class", "").Equals("article-tools"))
+    .FirstOrDefault()?.InnerText.Split(",", StringSplitOptions.None);
+
+    var keywordsSb = new StringBuilder();
+    var keywords = divContent?
+        .Descendants("li")
+        .Where(node => node.GetAttributeValue("itemprop", "")
+        .Equals("keywords"));
+
+    if (keywords != null)
+    {
+        foreach (var word in keywords)
+        {
+            keywordsSb.AppendLine(word.InnerText.Trim() + "; ");
+        }
+    }
+
     article.Title = title;
     article.Content = resultString;
     article.ArticleLink = link;
     article.Author = string.IsNullOrEmpty(articleAuthor) ? null : articleAuthor;
     article.DateModified = dateModified == null ? null : DateTime.Parse(dateModified).Date;
     article.DatePublished = datePublished == null ? null : DateTime.Parse(datePublished).Date;
+    article.Views = string.IsNullOrEmpty(views?[views.Length - 1]) ? null : views[views.Length - 1].Trim().Contains(' ') ? null : views[views.Length - 1].Trim();
+    article.Keywords = keywordsSb.ToString();
 
     return article;
 
@@ -251,7 +290,7 @@ async Task<List<Comment>> ScrapeComments(HtmlDocument htmlDocument, string artic
     //add null validation 
     var articleComments = new List<Comment>();
     var sb = new StringBuilder();
-    Thread.Sleep(random.Next(33, 244));
+    Thread.Sleep(random.Next(10, 54));
     var html = await GetHtmlFromLink(articleCommentsLink);
 
     if (html == null)
@@ -404,8 +443,8 @@ async Task<List<Comment>> ScrapeComments(HtmlDocument htmlDocument, string artic
                 sb.Clear();
 
                 // they might be null
-                var negativeReactions = comment?.Descendants("span").Where(node => node.GetAttributeValue("class", "").Equals("e-minus")).FirstOrDefault()?.InnerText;
-                var positiveReactions = comment?.Descendants("span").Where(node => node.GetAttributeValue("class", "").Equals("e-plus")).FirstOrDefault()?.InnerText;
+                var negativeReactions = comment?.Descendants().Where(node => node.GetAttributeValue("class", "").Equals("e-minus")).FirstOrDefault()?.InnerText;
+                var positiveReactions = comment?.Descendants().Where(node => node.GetAttributeValue("class", "").Equals("e-plus")).FirstOrDefault()?.InnerText;
 
                 articleComments.Add(new Comment
                 {
@@ -445,8 +484,10 @@ async Task<string> GetHtmlFromLink(string link)
 {
     try
     {
-        using (var httpClient = new HttpClient())
+
+        using (var httpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = true }))
         {
+
             log.Info("currnet link is {0}", link);
             if (link == null)
             {
@@ -462,6 +503,13 @@ async Task<string> GetHtmlFromLink(string link)
         if (ex.Message.Contains("code does not indicate success: 301"))
         {
             log.Error("Dnevnik Tried to promote commeercials");
+            return null;
+        }
+
+        if (ex.Message.Contains("code does not indicate success: 302"))
+        {
+            Console.WriteLine("Dnevnik Tried to redirect to another page! This was the link {0}", link);
+            log.Error("Dnevnik Tried to redirect to another page! This was the link {0}", link);
             return null;
         }
         throw ex;
@@ -501,7 +549,7 @@ async Task<HashSet<string>> TakeAllLinksOfDay(HtmlDocument htmlDocument, string 
 
     listLinks.RemoveWhere(x =>
     x.Contains("#event"));
-    
+
     //||
     //x.Contains("/filmi/") ||
     //x.Contains("/photos/"));
