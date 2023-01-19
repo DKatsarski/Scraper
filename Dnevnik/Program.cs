@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using NLog;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 //get all the dates for a period of time
 
@@ -553,31 +554,41 @@ async Task<string> GetHtmlFromLink(string link)
 async Task<HashSet<string>> TakeAllLinksOfDay(HtmlDocument htmlDocument, string dataInString)
 {
     // implement log here
-    var url = "https://www.dnevnik.bg/allnews/" + dataInString;
+    var url = "https://www.dnevnik.bg/novini/" + dataInString;
     var html = await GetHtmlFromLink(url);
     htmlDocument.LoadHtml(html);
     var listLinks = new HashSet<string>();
+    
 
     var divs =
         htmlDocument
-        .DocumentNode
-        .Descendants("div")
-        .Where(node => node.GetAttributeValue("class", "")
-        .Equals("grid-container"))
+        .DocumentNode.SelectNodes("//article[@class='secondary-article-v2 border-top list-item']")
         .ToList();
+
+        //.DocumentNode
+        //.Descendants("div")
+        //.Where(node => node.GetAttributeValue("class", "")
+        //.Equals("grid-container"))
+        //.ToList();
 
     foreach (HtmlNode div in divs)
     {
         var a = div.Descendants("a")
-            .Select(node => node
-            .GetAttributeValue("href", String.Empty)).ToList();
-
-        listLinks = div
-           .Descendants("a")
-           .Select(node => node
+         .Select(node => "https://www.dnevnik.bg" + node
            .GetAttributeValue("href", String.Empty))
-           .Where(x => x.StartsWith("http"))
-           .ToHashSet();
+           .Where(x => x.StartsWith("http") && !x.Contains("author")).ToHashSet();
+
+        foreach (var item in a)
+        {
+            listLinks.Add(item);
+        }
+
+        //listLinks = div
+        //.Descendants("a")
+        //   .Select(node => "https://www.dnevnik.bg" + node
+        //   .GetAttributeValue("href", String.Empty))
+        //   .Where(x => x.StartsWith("http") && !x.Contains("author"))
+        //   .ToHashSet();
     }
 
     listLinks.RemoveWhere(x =>
